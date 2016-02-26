@@ -1,3 +1,5 @@
+import six
+
 from .utils import DslBase, _make_dsl_class
 
 __all__ = [
@@ -69,8 +71,13 @@ class AggBase(object):
     def __setitem__(self, agg_name, agg):
         self.aggs[agg_name] = A(agg)
 
-    def _agg(self, bucket, name, agg_type, *args, **params):
-        agg = self[name] = A(agg_type, *args, **params)
+    def _agg(self, bucket, name, agg_type_or_agg, *args, **params):
+        if isinstance(agg_type_or_agg, Agg):
+            agg = self[name] = agg_type_or_agg
+        elif isinstance(agg_type_or_agg, six.string_types):
+            agg = self[name] = A(agg_type_or_agg, *args, **params)
+        else:
+            raise ValueError('Chaining accepts only string or A() as agg_type')
 
         # For chaining - when creating new buckets return them...
         if bucket:
@@ -79,14 +86,14 @@ class AggBase(object):
         else:
             return self._base
 
-    def metric(self, name, agg_type, *args, **params):
-        return self._agg(False, name, agg_type, *args, **params)
+    def metric(self, name, agg_type_or_agg, *args, **params):
+        return self._agg(False, name, agg_type_or_agg, *args, **params)
 
-    def bucket(self, name, agg_type, *args, **params):
-        return self._agg(True, name, agg_type, *args, **params)
+    def bucket(self, name, agg_type_or_agg, *args, **params):
+        return self._agg(True, name, agg_type_or_agg, *args, **params)
 
-    def pipeline(self, name, agg_type, *args, **params):
-        return self._agg(False, name, agg_type, *args, **params)
+    def pipeline(self, name, agg_type_or_agg, *args, **params):
+        return self._agg(False, name, agg_type_or_agg, *args, **params)
 
 
 class Bucket(AggBase, Agg):
